@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Kupony</title>
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    body { font-family: system-ui, sans-serif; padding: 16px; }
+    .box { padding: 12px; border: 1px solid #ddd; border-radius: 12px; margin-top: 12px; }
+    button { padding: 12px 14px; border-radius: 12px; border: none; font-weight: 600; }
+    input[type=file] { width: 100%; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>📸 Dodaj kupon ze screena</h2>
+
+  <div class="box">
+    <input id="file" type="file" accept="image/*" />
+    <div style="height:10px"></div>
+    <button id="send">Wyślij i odczytaj</button>
+  </div>
+
+  <div id="out" class="box" style="display:none"><pre id="txt"></pre></div>
+
+  <script>
+    const tg = window.Telegram.WebApp;
+    tg.expand();
+
+    const file = document.getElementById('file');
+    const out = document.getElementById('out');
+    const txt = document.getElementById('txt');
+
+    function show(msg) {
+      out.style.display = 'block';
+      txt.textContent = msg;
+    }
+
+    document.getElementById('send').onclick = async () => {
+      if (!file.files || !file.files[0]) {
+        show("Wybierz obrazek (screenshot).");
+        return;
+      }
+
+      show("⏳ Wysyłam...");
+
+      const form = new FormData();
+      form.append("initData", tg.initData || "");
+      form.append("image", file.files[0]);
+
+      const res = await fetch("/api/scan", { method: "POST", body: form });
+      const j = await res.json().catch(() => ({}));
+
+      if (!j.ok) {
+        show("❌ Błąd: " + (j.error || "unknown"));
+        return;
+      }
+
+      const r = j.result;
+
+      let msg =
+        "✅ Odczyt ze screena:\n\n" +
+        "Data: " + r.day_key + "\n" +
+        "Sesja: " + r.session + "\n" +
+        "Opis: " + r.desc + "\n" +
+        "Kurs: " + r.odds + "\n" +
+        "Stawka: " + r.stake + "\n";
+
+      if (r.result_guess) {
+        msg += "Wynik (wykryty): " + r.result_guess + "\n";
+      } else {
+        msg += "Wynik: (nie wykryto na screenie)\n";
+      }
+
+      msg += "\n➡️ Teraz wróć do czatu i wpisz /ok aby zapisać.";
+
+      show(msg);
+    };
+  </script>
+</body>
+</html>
