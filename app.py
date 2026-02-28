@@ -16,17 +16,14 @@ def telegram_webhook():
     update = request.get_json(force=True)
     print("UPDATE:", update)
 
-    if "message" in update:
-        chat_id = update["message"]["chat"]["id"]
-        text = update["message"].get("text", "")
-
-        # Odpowiedź do użytkownika
-        requests.post(
-            f"{TELEGRAM_API}/sendMessage",
-            json={
-                "chat_id": chat_id,
-                "text": f"Otrzymałem: {text}"
-            }
-        )
-
-    return "OK", 200
+    # Odpowiedź do użytkownika
+resp = requests.post(
+    f"{TELEGRAM_API}/sendMessage",
+    json={
+        "chat_id": chat_id,
+        "text": f"Otrzymałem: {text}"
+    },
+    timeout=10
+)
+print("sendMessage status:", resp.status_code)
+print("sendMessage body:", resp.text)
